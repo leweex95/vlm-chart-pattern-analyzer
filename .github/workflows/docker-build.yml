@@ -28,33 +28,64 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Log in to container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract image tags
+        shell: pwsh
+        id: tags
+        run: |
+          $repo = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}".ToLower()
+          $branch = "${{ github.ref_name }}"
+          $sha = "${{ github.sha }}".Substring(0,7)
+          
+          $tags = @(
+            "${repo}:${branch}",
+            "${repo}:${branch}-${sha}"
+          )
+          
+          if ("${{ github.ref }}" -eq "refs/heads/master") {
+            $tags += "${repo}:latest"
+          }
+          
+          $tagString = $tags -join ","
+          echo "tags=${tagString}" >> $env:GITHUB_OUTPUT
+          echo "first_tag=$($tags[0])" >> $env:GITHUB_OUTPUT
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # Enable caching to speed up subsequent builds
-          cache-from: type=gha,scope=${{ github.ref_name }}
-          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
+      - name: Build Docker image
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tags = "${{ steps.tags.outputs.tags }}" -split ","
+          $buildArgs = @("build", ".")
+          foreach ($tag in $tags) {
+            $buildArgs += "-t"
+            $buildArgs += $tag
+          }
+          & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" $buildArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Push Docker image
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tags = "${{ steps.tags.outputs.tags }}" -split ","
+          foreach ($tag in $tags) {
+            Write-Host "Pushing ${tag}..."
+            & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push $tag
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Post build summary
+        shell: pwsh
         run: |
-          echo "Built and pushed image: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          $summary = @"
+          ### Docker Build Summary
+          
+          **Image:** ``${{ steps.tags.outputs.first_tag }}``
+          
+          **All tags:**
+          $("${{ steps.tags.outputs.tags }}" -split "," | ForEach-Object { "- ``$_``" } | Out-String)
+          "@
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary

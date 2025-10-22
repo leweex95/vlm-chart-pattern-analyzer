@@ -22,8 +22,8 @@ COPY pyproject.toml ./
 
 # Install dependencies (excluding dev dependencies)
 # Install PyTorch CPU version explicitly first to avoid pulling CUDA
-RUN --mount=type=cache,target=/tmp/poetry_cache \
-    pip install --no-cache-dir torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cpu && \
+# Note: Removed cache mount for Windows compatibility
+RUN pip install --no-cache-dir torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cpu && \
     poetry install --only main --with inference --with charting --no-root --no-directory
 
 # Runtime stage - minimal image
