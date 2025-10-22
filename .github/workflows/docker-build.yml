@@ -30,7 +30,11 @@ jobs:
       - name: Log in to container registry
         shell: cmd
         run: |
-          echo %GITHUB_TOKEN% | "C:\Program Files\Docker\Docker\resources\bin\docker.exe" login %REGISTRY% -u %GITHUB_ACTOR% --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Verify login
+        shell: cmd
+        run: docker info
 
       - name: Extract image tags
         shell: cmd
