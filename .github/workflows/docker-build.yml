@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Start Docker service
         shell: powershell
@@ -68,11 +70,30 @@ jobs:
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
 
+      - name: Verify build context
+        shell: cmd
+        run: |
+          echo Current directory:
+          cd
+          echo.
+          echo Directory contents:
+          dir /B
+          echo.
+          if exist "src" (
+            echo src directory exists
+            dir src
+          ) else (
+            echo ERROR: src directory not found!
+            exit /b 1
+          )
+
       - name: Build Docker image
         shell: cmd
         run: |
           for %%t in (${{ steps.tags.outputs.tags }}) do (
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t %%t .
+            echo Building image: %%t
+            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t %%t --progress=plain .
+            if errorlevel 1 exit /b 1
           )
 
       - name: Push Docker image
