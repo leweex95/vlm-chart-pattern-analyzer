@@ -8,6 +8,9 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "MetaTrader5>=5.0.0",
+    "matplotlib>=3.8.0",
+    "pandas>=2.0.0",
 ]
 
 [tool.poetry]
