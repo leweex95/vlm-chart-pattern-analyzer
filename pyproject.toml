@@ -22,6 +22,7 @@ transformers = "^4.40.0"
 pillow = "^10.0.0"
 accelerate = "^0.27.0"
 psutil = "^5.9.0"
+bitsandbytes = "^0.43.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

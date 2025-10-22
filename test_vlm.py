@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import time
 import psutil
+import argparse
 
 # Test imports first
 try:
@@ -14,27 +15,43 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from transformers import AutoProcessor, AutoModelForVision2Seq
+    from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
     print(f"✓ Transformers loaded")
 except Exception as e:
     print(f"✗ Transformers failed to load: {e}")
     sys.exit(1)
 
 
-def load_model():
-    """Load Qwen2-VL 2B model (smaller, easier to test)."""
-    print("\nLoading Qwen2-VL-2B model...")
+def load_model(precision="fp32"):
+    """Load Qwen2-VL 2B model with specified precision.
+    
+    Args:
+        precision: One of 'fp32', 'fp16', 'int8'
+    """
+    print(f"\nLoading Qwen2-VL-2B model ({precision})...")
     model_id = "Qwen/Qwen2-VL-2B-Instruct"
     
     processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-    model = AutoModelForVision2Seq.from_pretrained(
-        model_id,
-        torch_dtype=torch.float32,
-        device_map="cpu",  # Use CPU for now
-        trust_remote_code=True
-    )
     
-    print("✓ Model loaded successfully")
+    # Configure precision
+    kwargs = {
+        "trust_remote_code": True,
+        "device_map": "cpu",  # Use CPU for now
+    }
+    
+    if precision == "fp16":
+        kwargs["torch_dtype"] = torch.float16
+    elif precision == "int8":
+        # INT8 quantization
+        quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+        kwargs["quantization_config"] = quantization_config
+        kwargs["device_map"] = "auto"  # INT8 needs auto device mapping
+    else:  # fp32
+        kwargs["torch_dtype"] = torch.float32
+    
+    model = AutoModelForVision2Seq.from_pretrained(model_id, **kwargs)
+    
+    print(f"✓ Model loaded successfully ({precision})")
     return model, processor
 
 
@@ -92,8 +109,18 @@ def analyze_chart(image_path, model, processor):
 
 def main():
     """Test VLM on one chart image."""
+    parser = argparse.ArgumentParser(description="Test VLM inference with metrics")
+    parser.add_argument(
+        "--precision",
+        type=str,
+        default="fp32",
+        choices=["fp32", "fp16", "int8"],
+        help="Model precision (default: fp32)"
+    )
+    args = parser.parse_args()
+    
     # Load model
-    model, processor = load_model()
+    model, processor = load_model(precision=args.precision)
     
     # Get first chart
     image_path = Path("data/images/chart_001.png")
@@ -107,7 +134,7 @@ def main():
     metrics = analyze_chart(image_path, model, processor)
     
     print("\n" + "="*80)
-    print("METRICS:")
+    print(f"METRICS ({args.precision}):")
     print("="*80)
     print(f"Latency:       {metrics['latency_ms']:.2f} ms")
     print(f"Memory used:   {metrics['memory_mb']:.2f} MB")
