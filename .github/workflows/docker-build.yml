@@ -27,6 +27,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Start Docker service
+        shell: powershell
+        run: |
+          Start-Service com.docker.service
+          Start-Sleep -Seconds 10
+
+      - name: Verify Docker
+        shell: cmd
+        run: docker version
+
       - name: Log in to container registry
         shell: cmd
         run: |
