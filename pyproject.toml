@@ -25,6 +25,7 @@ bitsandbytes = "^0.43.0"
 MetaTrader5 = "^5.0.0"
 matplotlib = "^3.8.0"
 numpy = ">=1.24.0,<2.0.0"
+plotly = "^5.18.0"
 
 [tool.poetry.group.dev]
 optional = true
