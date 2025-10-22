@@ -41,7 +41,8 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application files
-COPY *.py ./
+COPY src ./src
+COPY scripts ./scripts
 COPY pyproject.toml ./
 
 # Create necessary directories
@@ -67,4 +68,4 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 
 # Default command - run benchmark with limited images
-CMD ["python", "benchmark.py", "--limit", "5"]
+CMD ["python", "scripts/benchmark.py", "--limit", "5"]
