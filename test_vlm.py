@@ -2,6 +2,8 @@
 from PIL import Image
 from pathlib import Path
 import sys
+import time
+import psutil
 
 # Test imports first
 try:
@@ -37,7 +39,7 @@ def load_model():
 
 
 def analyze_chart(image_path, model, processor):
-    """Analyze a chart image."""
+    """Analyze a chart image with metrics."""
     image = Image.open(image_path)
     
     prompt = "Analyze this trading chart and identify any chart patterns present (e.g., head and shoulders, double top, triangle, flag, wedge). Describe the pattern and trend direction."
@@ -56,12 +58,36 @@ def analyze_chart(image_path, model, processor):
     text_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     inputs = processor(text=[text_prompt], images=[image], return_tensors="pt")
     
-    # Generate
+    # Measure metrics
     print(f"\nAnalyzing {image_path.name}...")
+    
+    # Get memory before
+    process = psutil.Process()
+    mem_before = process.memory_info().rss / 1024 / 1024  # MB
+    
+    # Measure inference time
+    start_time = time.perf_counter()
     outputs = model.generate(**inputs, max_new_tokens=200)
+    end_time = time.perf_counter()
+    
+    # Get memory after
+    mem_after = process.memory_info().rss / 1024 / 1024  # MB
+    
+    # Calculate metrics
+    latency_ms = (end_time - start_time) * 1000
+    memory_used = mem_after - mem_before
     
     result = processor.batch_decode(outputs, skip_special_tokens=True)[0]
-    return result
+    
+    # Count tokens (approximate)
+    tokens_generated = len(result.split())
+    
+    return {
+        'result': result,
+        'latency_ms': latency_ms,
+        'memory_mb': memory_used,
+        'tokens': tokens_generated
+    }
 
 
 def main():
@@ -77,13 +103,19 @@ def main():
         print("Run generate_charts.py first")
         return
     
-    # Analyze
-    result = analyze_chart(image_path, model, processor)
+    # Analyze with metrics
+    metrics = analyze_chart(image_path, model, processor)
     
     print("\n" + "="*80)
-    print("RESULT:")
+    print("METRICS:")
     print("="*80)
-    print(result)
+    print(f"Latency:       {metrics['latency_ms']:.2f} ms")
+    print(f"Memory used:   {metrics['memory_mb']:.2f} MB")
+    print(f"Tokens:        {metrics['tokens']}")
+    print("="*80)
+    print("\nRESULT:")
+    print("="*80)
+    print(metrics['result'])
     print("="*80)
 
 
