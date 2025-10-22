@@ -3,7 +3,7 @@ name: Build and push Docker image
 on:
   push:
     # branches: 
-      # - master
+    #   - master
     paths:
       - 'Dockerfile'
       - '*.py'
@@ -60,20 +60,25 @@ jobs:
           set sha=%GITHUB_SHA:~0,7%
 
           set tags=%repo%:%branch%-%DATETIME%,%repo%:%branch%-%sha%
+          set first_tag=%repo%:%branch%-%DATETIME%
+          
           echo tags=%tags%>>%GITHUB_OUTPUT%
-          echo first_tag=%repo%:%branch%-%DATETIME%>>%GITHUB_OUTPUT%
+          echo first_tag=%first_tag%>>%GITHUB_OUTPUT%
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
 
       - name: Build Docker image
         shell: cmd
         run: |
-          for %%t in (%TAGS%) do (
+          for %%t in (${{ steps.tags.outputs.tags }}) do (
             "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t %%t .
           )
 
       - name: Push Docker image
         shell: cmd
         run: |
-          for %%t in (%TAGS%) do (
+          for %%t in (${{ steps.tags.outputs.tags }}) do (
             echo Pushing %%t...
             "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push %%t
           )
@@ -81,5 +86,5 @@ jobs:
       - name: Post build summary
         shell: cmd
         run: |
-          echo Build complete: %FIRST_TAG%>>%GITHUB_STEP_SUMMARY%
+          echo Build complete: ${{ steps.tags.outputs.first_tag }}>>%GITHUB_STEP_SUMMARY%
 
