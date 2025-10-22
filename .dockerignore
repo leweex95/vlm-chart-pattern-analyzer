@@ -20,6 +20,5 @@ data/
 README.md
 .dockerignore
 poetry.lock
-src/
 tests/
 helm/
