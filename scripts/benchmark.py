@@ -60,7 +60,7 @@ def main():
                 "latency_ms": f"{metrics['latency_ms']:.2f}",
                 "memory_mb": f"{metrics['memory_mb']:.2f}",
                 "tokens": metrics["tokens"],
-                "result": metrics["result"]
+                "response": metrics["result"]
             })
             
             print(f"  ✓ Latency: {metrics['latency_ms']:.2f}ms, Memory: {metrics['memory_mb']:.2f}MB")

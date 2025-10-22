@@ -230,3 +230,127 @@ def create_summary_statistics(df: pd.DataFrame, output_path: str = 'data/results
     
     # Also print to console
     print('\n' + '\n'.join(summary))
+
+
+def plot_similarity_heatmap(similarity_dict: Dict, output_path: str = None) -> go.Figure:
+    """Create heatmap of model-to-model similarity."""
+    import numpy as np
+    
+    if not similarity_dict:
+        print("⚠️ No similarity data to visualize")
+        return None
+    
+    # Extract data from first entry to get models
+    first_entry = list(similarity_dict.values())[0]
+    models = first_entry['models']
+    
+    # Compute average similarity matrix
+    all_matrices = []
+    for entry in similarity_dict.values():
+        all_matrices.append(np.array(entry['similarity_matrix']))
+    
+    avg_matrix = np.mean(all_matrices, axis=0)
+    
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=avg_matrix,
+            x=models,
+            y=models,
+            colorscale='RdBu',
+            zmid=0.0,
+            colorbar=dict(title='Similarity'),
+            hovertemplate='%{y} vs %{x}<br>Similarity: %{z:.3f}<extra></extra>'
+        )
+    )
+    
+    fig.update_layout(
+        title='Average Model Similarity Across All Images',
+        xaxis_title='Model',
+        yaxis_title='Model',
+        height=600,
+        template='plotly_white',
+        font=dict(size=12)
+    )
+    
+    if output_path:
+        fig.write_html(output_path)
+        print(f"✓ Saved: {output_path}")
+    
+    return fig
+
+
+def plot_model_agreement_bars(agreement_dict: Dict, output_path: str = None) -> go.Figure:
+    """Create bar chart of model pair agreement."""
+    if not agreement_dict:
+        print("⚠️ No agreement data to visualize")
+        return None
+    
+    pairs = list(agreement_dict.keys())
+    means = [agreement_dict[pair]['mean_similarity'] for pair in pairs]
+    stds = [agreement_dict[pair]['std_similarity'] for pair in pairs]
+    
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=pairs,
+                y=means,
+                error_y=dict(type='data', array=stds),
+                marker_color='steelblue',
+                hovertemplate='%{x}<br>Avg Similarity: %{y:.3f}<br>Std: %{error_y.array:.3f}<extra></extra>'
+            )
+        ]
+    )
+    
+    fig.update_layout(
+        title='Model Pair Agreement (Mean Similarity)',
+        xaxis_title='Model Pair',
+        yaxis_title='Similarity',
+        height=600,
+        template='plotly_white',
+        font=dict(size=11),
+        xaxis_tickangle=-45,
+        showlegend=False
+    )
+    
+    if output_path:
+        fig.write_html(output_path)
+        print(f"✓ Saved: {output_path}")
+    
+    return fig
+
+
+def plot_similarity_distribution(similarity_dict: Dict, output_path: str = None) -> go.Figure:
+    """Create distribution plot of similarities across images."""
+    import numpy as np
+    
+    if not similarity_dict:
+        print("⚠️ No similarity data to visualize")
+        return None
+    
+    all_similarities = []
+    for entry in similarity_dict.values():
+        # Extract upper triangle (avoid duplicates)
+        matrix = np.array(entry['similarity_matrix'])
+        upper_triangle = matrix[np.triu_indices_from(matrix, k=1)]
+        all_similarities.extend(upper_triangle)
+    
+    fig = px.histogram(
+        x=all_similarities,
+        nbins=30,
+        title='Distribution of Model Similarities Across All Images',
+        labels={'x': 'Similarity Score', 'y': 'Frequency'},
+        template='plotly_white'
+    )
+    
+    fig.update_layout(
+        height=600,
+        font=dict(size=12),
+        showlegend=False
+    )
+    
+    if output_path:
+        fig.write_html(output_path)
+        print(f"✓ Saved: {output_path}")
+    
+    return fig
+

@@ -13,6 +13,17 @@ from .visualization import (
     plot_model_comparison_heatmap,
     plot_comprehensive_dashboard,
     create_summary_statistics,
+    plot_similarity_heatmap,
+    plot_model_agreement_bars,
+    plot_similarity_distribution,
+)
+from .similarity import (
+    compute_similarity_matrix,
+    compute_pairwise_similarity,
+    analyze_benchmark_similarities,
+    load_benchmark_with_responses,
+    create_agreement_summary,
+    save_similarity_analysis,
 )
 
 __all__ = [
@@ -28,4 +39,13 @@ __all__ = [
     "plot_model_comparison_heatmap",
     "plot_comprehensive_dashboard",
     "create_summary_statistics",
+    "plot_similarity_heatmap",
+    "plot_model_agreement_bars",
+    "plot_similarity_distribution",
+    "compute_similarity_matrix",
+    "compute_pairwise_similarity",
+    "analyze_benchmark_similarities",
+    "load_benchmark_with_responses",
+    "create_agreement_summary",
+    "save_similarity_analysis",
 ]
