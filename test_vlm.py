@@ -1,21 +1,38 @@
 """Simple VLM inference test script - starts with one model."""
 from PIL import Image
-from transformers import AutoProcessor, LlavaForConditionalGeneration
 from pathlib import Path
+import sys
+
+# Test imports first
+try:
+    import torch
+    print(f"✓ PyTorch {torch.__version__} loaded")
+except Exception as e:
+    print(f"✗ PyTorch failed to load: {e}")
+    sys.exit(1)
+
+try:
+    from transformers import AutoProcessor, AutoModelForVision2Seq
+    print(f"✓ Transformers loaded")
+except Exception as e:
+    print(f"✗ Transformers failed to load: {e}")
+    sys.exit(1)
 
 
 def load_model():
-    """Load LLaVA model."""
-    print("Loading LLaVA model...")
-    model_id = "llava-hf/llava-1.5-7b-hf"
+    """Load Qwen2-VL 2B model (smaller, easier to test)."""
+    print("\nLoading Qwen2-VL-2B model...")
+    model_id = "Qwen/Qwen2-VL-2B-Instruct"
     
-    processor = AutoProcessor.from_pretrained(model_id)
-    model = LlavaForConditionalGeneration.from_pretrained(
+    processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+    model = AutoModelForVision2Seq.from_pretrained(
         model_id,
-        device_map="auto"
+        torch_dtype=torch.float32,
+        device_map="cpu",  # Use CPU for now
+        trust_remote_code=True
     )
     
-    print("Model loaded")
+    print("✓ Model loaded successfully")
     return model, processor
 
 
@@ -25,19 +42,19 @@ def analyze_chart(image_path, model, processor):
     
     prompt = "Analyze this trading chart and identify any chart patterns present (e.g., head and shoulders, double top, triangle, flag, wedge). Describe the pattern and trend direction."
     
-    # Prepare inputs
-    conversation = [
+    # Prepare inputs for Qwen2-VL
+    messages = [
         {
             "role": "user",
             "content": [
-                {"type": "image"},
+                {"type": "image", "image": image},
                 {"type": "text", "text": prompt},
             ],
         }
     ]
     
-    text_prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
-    inputs = processor(images=image, text=text_prompt, return_tensors="pt").to(model.device)
+    text_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = processor(text=[text_prompt], images=[image], return_tensors="pt")
     
     # Generate
     print(f"\nAnalyzing {image_path.name}...")
