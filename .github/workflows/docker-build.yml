@@ -28,64 +28,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Log in to container registry
-        shell: pwsh
+        shell: cmd
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          echo %GITHUB_TOKEN% | "C:\Program Files\Docker\Docker\resources\bin\docker.exe" login %REGISTRY% -u %GITHUB_ACTOR% --password-stdin
 
       - name: Extract image tags
-        shell: pwsh
+        shell: cmd
         id: tags
         run: |
-          $repo = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}".ToLower()
-          $branch = "${{ github.ref_name }}"
-          $sha = "${{ github.sha }}".Substring(0,7)
-          
-          $tags = @(
-            "${repo}:${branch}",
-            "${repo}:${branch}-${sha}"
-          )
-          
-          if ("${{ github.ref }}" -eq "refs/heads/master") {
-            $tags += "${repo}:latest"
-          }
-          
-          $tagString = $tags -join ","
-          echo "tags=${tagString}" >> $env:GITHUB_OUTPUT
-          echo "first_tag=$($tags[0])" >> $env:GITHUB_OUTPUT
+          for /f "tokens=1-3 delims=/- " %%a in ("%date%") do set DATE=%%c%%a%%b
+          for /f "tokens=1-2 delims=:." %%a in ("%time%") do set TIME=%%a%%b
+          set DATETIME=%DATE%-%TIME%
+
+          set repo=%REGISTRY%/%IMAGE_NAME%
+          set branch=%GITHUB_REF_NAME%
+          set sha=%GITHUB_SHA:~0,7%
+
+          set tags=%repo%:%branch%-%DATETIME%,%repo%:%branch%-%sha%
+          echo tags=%tags%>>%GITHUB_OUTPUT%
+          echo first_tag=%repo%:%branch%-%DATETIME%>>%GITHUB_OUTPUT%
 
       - name: Build Docker image
-        shell: pwsh
+        shell: cmd
         run: |
-          $ErrorActionPreference = "Stop"
-          $tags = "${{ steps.tags.outputs.tags }}" -split ","
-          $buildArgs = @("build", ".")
-          foreach ($tag in $tags) {
-            $buildArgs += "-t"
-            $buildArgs += $tag
-          }
-          & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" $buildArgs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          for %%t in (%TAGS%) do (
+            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t %%t .
+          )
 
       - name: Push Docker image
-        shell: pwsh
+        shell: cmd
         run: |
-          $ErrorActionPreference = "Stop"
-          $tags = "${{ steps.tags.outputs.tags }}" -split ","
-          foreach ($tag in $tags) {
-            Write-Host "Pushing ${tag}..."
-            & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push $tag
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+          for %%t in (%TAGS%) do (
+            echo Pushing %%t...
+            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push %%t
+          )
 
       - name: Post build summary
-        shell: pwsh
+        shell: cmd
         run: |
-          $summary = @"
-          ### Docker Build Summary
-          
-          **Image:** ``${{ steps.tags.outputs.first_tag }}``
-          
-          **All tags:**
-          $("${{ steps.tags.outputs.tags }}" -split "," | ForEach-Object { "- ``$_``" } | Out-String)
-          "@
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary
+          echo Build complete: %FIRST_TAG%>>%GITHUB_STEP_SUMMARY%
+
