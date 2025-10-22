@@ -1,0 +1,18 @@
+[project]
+name = "vlm-chart-pattern-analyzer"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "leweex95",email = "leweex95@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+]
+
+[tool.poetry]
+packages = [{include = "vlm_chart_pattern_analyzer", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
