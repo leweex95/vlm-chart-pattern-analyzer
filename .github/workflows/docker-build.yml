@@ -60,6 +60,9 @@ jobs:
           set repo=%REGISTRY%/%IMAGE_NAME%
           set branch=%GITHUB_REF_NAME%
           set sha=%GITHUB_SHA:~0,7%
+          
+          REM Replace forward slashes with hyphens in branch name for Docker tag validity
+          set branch=%branch:/=-% 
 
           set tags=%repo%:%branch%-%DATETIME%,%repo%:%branch%-%sha%
           set first_tag=%repo%:%branch%-%DATETIME%
