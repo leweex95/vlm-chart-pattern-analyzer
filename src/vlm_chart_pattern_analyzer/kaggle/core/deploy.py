@@ -105,11 +105,19 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
         actual_kernel_id = None
         if result.stdout:
             logging.debug(f"Kaggle push output: {result.stdout}")
-            # Look for patterns like "Successfully pushed to username/kernel-slug"
+            # Look for patterns like "Successfully pushed to username/kernel-slug" or URLs
             import re
-            match = re.search(r'(?:pushed to|Kernel version \d+ for|at)\s+(\S+/[\w-]+)', result.stdout)
-            if match:
-                actual_kernel_id = match.group(1)
+            # Try to match URL pattern first
+            url_match = re.search(r'https://www\.kaggle\.com/code/(\S+/[\w-]+)', result.stdout)
+            if url_match:
+                actual_kernel_id = url_match.group(1)
+            else:
+                # Fallback to slug pattern
+                slug_match = re.search(r'(?:pushed to|Kernel version \d+ for|at)\s+(\S+/[\w-]+)', result.stdout)
+                if slug_match:
+                    actual_kernel_id = slug_match.group(1)
+            
+            if actual_kernel_id:
                 logging.info(f"✓ Kernel deployed successfully: {actual_kernel_id}")
             else:
                 logging.info("✓ Kernel deployed successfully")
