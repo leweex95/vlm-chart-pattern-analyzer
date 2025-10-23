@@ -50,28 +50,19 @@ jobs:
         run: docker info
 
       - name: Extract image tags
-        shell: cmd
+        shell: powershell
         id: tags
         run: |
-          for /f "tokens=1-3 delims=/- " %%a in ("%date%") do set DATE=%%c%%a%%b
-          for /f "tokens=1-2 delims=:." %%a in ("%time%") do set TIME=%%a%%b
-          set DATETIME=%DATE%-%TIME%
-
-          set repo=%REGISTRY%/%IMAGE_NAME%
-          set branch=%GITHUB_REF_NAME%
-          set sha=%GITHUB_SHA:~0,7%
+          $datetime = Get-Date -Format "yyyyMMdd-HHmmss"
+          $repo = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          $branch = "${{ github.ref_name }}" -replace '/','-'
           
-          REM Replace forward slashes with hyphens in branch name for Docker tag validity
-          set branch=%branch:/=-% 
-
-          set tags=%repo%:%branch%-%DATETIME%,%repo%:%branch%-%sha%
-          set first_tag=%repo%:%branch%-%DATETIME%
+          $tag = "${repo}:${branch}-${datetime}"
           
-          echo tags=%tags%>>%GITHUB_OUTPUT%
-          echo first_tag=%first_tag%>>%GITHUB_OUTPUT%
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          echo "tags=${tag}" >> $env:GITHUB_OUTPUT
+          echo "first_tag=${tag}" >> $env:GITHUB_OUTPUT
+          
+          Write-Host "Generated tag: ${tag}"
 
       - name: Verify build context
         shell: cmd
@@ -93,19 +84,15 @@ jobs:
       - name: Build Docker image
         shell: cmd
         run: |
-          for %%t in (${{ steps.tags.outputs.tags }}) do (
-            echo Building image: %%t
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t %%t --progress=plain .
-            if errorlevel 1 exit /b 1
-          )
+          echo Building image: ${{ steps.tags.outputs.first_tag }}
+          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t ${{ steps.tags.outputs.first_tag }} --progress=plain .
+          if errorlevel 1 exit /b 1
 
       - name: Push Docker image
         shell: cmd
         run: |
-          for %%t in (${{ steps.tags.outputs.tags }}) do (
-            echo Pushing %%t...
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push %%t
-          )
+          echo Pushing ${{ steps.tags.outputs.first_tag }}...
+          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push ${{ steps.tags.outputs.first_tag }}
 
       - name: Post build summary
         shell: cmd
