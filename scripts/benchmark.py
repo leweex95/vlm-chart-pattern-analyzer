@@ -58,6 +58,45 @@ MODELS = {
 
 PRECISIONS = ["fp32", "fp16"]
 
+# Optimization configurations
+BENCHMARK_CONFIGS = {
+    "baseline": {
+        "precision": "fp32",
+        "optimizations": [],
+        "description": "Unoptimized baseline FP32",
+    },
+    "fp16": {
+        "precision": "fp16",
+        "optimizations": [],
+        "description": "FP16 mixed precision",
+    },
+    "sglang": {
+        "precision": "fp16",
+        "optimizations": ["sglang"],
+        "description": "SGLang optimized inference",
+    },
+    "tensorrt": {
+        "precision": "fp16",
+        "optimizations": ["tensorrt"],
+        "description": "TensorRT compilation",
+    },
+    "quantized-int8": {
+        "precision": "int8",
+        "optimizations": ["quantization"],
+        "description": "INT8 quantization",
+    },
+    "compiled": {
+        "precision": "fp16",
+        "optimizations": ["torch_compile"],
+        "description": "Torch compiled model",
+    },
+    "flash-attention": {
+        "precision": "fp16",
+        "optimizations": ["flash_attention"],
+        "description": "Flash Attention v2",
+    },
+}
+
 
 class KaggleBenchmarkOrchestrator:
     """Orchestrates multi-model benchmarking on Kaggle."""
@@ -67,14 +106,22 @@ class KaggleBenchmarkOrchestrator:
         images_dir: str = "data/images",
         results_dir: str = "data/results/kaggle_benchmark",
         kernel_id_prefix: str = "leventecsibi/vlm-chart-benchmark",
+        config: str = "baseline",
         gpu: bool = True,
         dry_run: bool = False,
     ):
         self.images_dir = Path(images_dir)
         self.results_dir = Path(results_dir)
         self.kernel_id_prefix = kernel_id_prefix
+        self.config = config
         self.gpu = gpu
         self.dry_run = dry_run
+        
+        # Validate config
+        if config not in BENCHMARK_CONFIGS:
+            raise ValueError(f"Unknown config: {config}. Choose from: {list(BENCHMARK_CONFIGS.keys())}")
+        
+        self.config_settings = BENCHMARK_CONFIGS[config]
         
         # Ensure results directory exists
         self.results_dir.mkdir(parents=True, exist_ok=True)
@@ -423,6 +470,13 @@ Examples:
         help="Benchmark mode (currently only Kaggle is supported)"
     )
     parser.add_argument(
+        "--config",
+        type=str,
+        choices=list(BENCHMARK_CONFIGS.keys()),
+        default="baseline",
+        help="Benchmark configuration (baseline, fp16, sglang, tensorrt, quantized-int8, compiled, flash-attention)"
+    )
+    parser.add_argument(
         "--images-dir",
         type=str,
         default="data/images",
@@ -458,6 +512,7 @@ Examples:
         images_dir=args.images_dir,
         results_dir=args.results_dir,
         kernel_id_prefix=args.kernel_id_prefix,
+        config=args.config,
         gpu=not args.no_gpu,
         dry_run=args.dry_run,
     )
