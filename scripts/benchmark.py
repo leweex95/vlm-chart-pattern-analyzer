@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 
 # Model configurations
 MODELS = {
-    "qwen2-vl-2b": {
-        "model_id": "Qwen/Qwen2-VL-2B-Instruct",
-        "display_name": "Qwen2-VL-2B",
+    "smolvlm2-2.2b": {
+        "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+        "display_name": "SmolVLM2-2.2B",
     },
     "llava-1.6-mistral-7b": {
         "model_id": "llava-hf/llava-v1.6-mistral-7b-hf",
@@ -53,10 +53,6 @@ MODELS = {
     "phi-3-vision": {
         "model_id": "microsoft/Phi-3-vision-128k-instruct",
         "display_name": "Phi-3-Vision",
-    },
-    "smolvlm2-2.2b": {
-        "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
-        "display_name": "SmolVLM2-2.2B",
     },
 }
 
