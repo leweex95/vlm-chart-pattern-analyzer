@@ -87,8 +87,19 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
         
         result = subprocess.run(
             [*kaggle_cmd, "kernels", "push", "-p", str(temp_path)],
-            check=True, capture_output=True, text=True, encoding='utf-8'
+            capture_output=True, text=True, encoding='utf-8'
         )
+        
+        # Check for errors
+        if result.returncode != 0:
+            error_msg = f"Kaggle push failed (exit code {result.returncode})"
+            if result.stderr:
+                logging.error(f"stderr: {result.stderr}")
+                error_msg += f"\nStderr: {result.stderr}"
+            if result.stdout:
+                logging.error(f"stdout: {result.stdout}")
+                error_msg += f"\nStdout: {result.stdout}"
+            raise RuntimeError(error_msg)
         
         # Parse the actual kernel ID from Kaggle's response
         actual_kernel_id = None
