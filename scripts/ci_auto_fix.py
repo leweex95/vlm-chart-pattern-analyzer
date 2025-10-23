@@ -103,6 +103,18 @@ ERROR_PATTERNS = [
         description="HTTP client error",
         fix_suggestion="Check the URL and authentication credentials",
     ),
+    ErrorPattern(
+        pattern=r"No module named 'tensorrt'",
+        error_type="ModuleNotFoundError",
+        description="TensorRT not installed",
+        fix_suggestion="TensorRT only available on Kaggle GPUs. Use --config baseline on local Windows.",
+    ),
+    ErrorPattern(
+        pattern=r"torch_tensorrt.*compilation.*failed",
+        error_type="TensorRTError",
+        description="TensorRT compilation failed",
+        fix_suggestion="Check model compatibility with TensorRT or fallback to PyTorch",
+    ),
 ]
 
 

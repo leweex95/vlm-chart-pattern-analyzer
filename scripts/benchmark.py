@@ -90,6 +90,16 @@ BENCHMARK_CONFIGS = {
         "optimizations": ["flash_attention"],
         "description": "Flash Attention v2",
     },
+    "tensorrt": {
+        "precision": "fp16",
+        "optimizations": ["tensorrt"],
+        "description": "TensorRT optimization",
+    },
+    "tensorrt-int8": {
+        "precision": "int8",
+        "optimizations": ["tensorrt", "quantization"],
+        "description": "TensorRT with INT8 quantization",
+    },
 }
 
 
