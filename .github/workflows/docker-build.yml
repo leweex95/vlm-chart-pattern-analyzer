@@ -2,7 +2,7 @@ name: Build and push Docker image
 
 on:
   push:
-    # branches: 
+    # branches:
     #   - master
     paths:
       - 'Dockerfile'
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: docker.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
       - name: Log in to container registry
         shell: cmd
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login docker.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: Verify login
         shell: cmd
@@ -56,12 +56,12 @@ jobs:
           $datetime = Get-Date -Format "yyyyMMdd-HHmmss"
           $repo = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           $branch = "${{ github.ref_name }}" -replace '/','-'
-          
+
           $tag = "${repo}:${branch}-${datetime}"
-          
+
           echo "tags=${tag}" >> $env:GITHUB_OUTPUT
           echo "first_tag=${tag}" >> $env:GITHUB_OUTPUT
-          
+
           Write-Host "Generated tag: ${tag}"
 
       - name: Verify build context
@@ -82,26 +82,17 @@ jobs:
           )
 
       - name: Build Docker image
-        shell: powershell
-        timeout-minutes: 60
+        shell: cmd
         run: |
-          Write-Host "Building image: ${{ steps.tags.outputs.first_tag }}"
-          docker build -t ${{ steps.tags.outputs.first_tag }} --progress=plain .
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Docker build failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
-          }
+          echo Building image: ${{ steps.tags.outputs.first_tag }}
+          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t ${{ steps.tags.outputs.first_tag }} --progress=plain .
+          if errorlevel 1 exit /b 1
 
       - name: Push Docker image
-        shell: powershell
-        timeout-minutes: 30
+        shell: cmd
         run: |
-          Write-Host "Pushing ${{ steps.tags.outputs.first_tag }}..."
-          docker push ${{ steps.tags.outputs.first_tag }}
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Docker push failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
-          }
+          echo Pushing ${{ steps.tags.outputs.first_tag }}...
+          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push ${{ steps.tags.outputs.first_tag }}
 
       - name: Post build summary
         shell: cmd
