@@ -82,17 +82,26 @@ jobs:
           )
 
       - name: Build Docker image
-        shell: cmd
+        shell: powershell
+        timeout-minutes: 60
         run: |
-          echo Building image: ${{ steps.tags.outputs.first_tag }}
-          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" build -t ${{ steps.tags.outputs.first_tag }} --progress=plain .
-          if errorlevel 1 exit /b 1
+          Write-Host "Building image: ${{ steps.tags.outputs.first_tag }}"
+          docker build -t ${{ steps.tags.outputs.first_tag }} --progress=plain .
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Docker build failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
       - name: Push Docker image
-        shell: cmd
+        shell: powershell
+        timeout-minutes: 30
         run: |
-          echo Pushing ${{ steps.tags.outputs.first_tag }}...
-          "C:\Program Files\Docker\Docker\resources\bin\docker.exe" push ${{ steps.tags.outputs.first_tag }}
+          Write-Host "Pushing ${{ steps.tags.outputs.first_tag }}..."
+          docker push ${{ steps.tags.outputs.first_tag }}
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Docker push failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
       - name: Post build summary
         shell: cmd
