@@ -9,36 +9,36 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def run(model_id, precision="fp32", notebook="vlm-inference-benchmark.ipynb", kernel_path=".", gpu=None):
+def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", kernel_path=".", gpu=None):
     """
     Deploy Kaggle notebook kernel for VLM inference benchmarking.
     
     Args:
         model_id: Hugging Face model ID (e.g., "Qwen/Qwen2-VL-2B-Instruct")
-        precision: fp32, fp16, or int8
+        config: Benchmark configuration (baseline, fp16, quantized-int8, quantized-int4, etc.)
         notebook: Path to notebook template
         kernel_path: Path to kernel configuration directory
         gpu: Enable GPU (True/False/None)
     """
-    logging.info(f"Deploying VLM benchmark: {model_id} ({precision})")
+    logging.info(f"Deploying VLM benchmark: {model_id} (config={config})")
     
     # Load notebook
     nb_path = Path(notebook)
     with open(nb_path, "r", encoding="utf-8") as f:
         nb = json.load(f)
 
-    # Update MODEL_ID and PRECISION in notebook
+    # Update MODEL_ID and CONFIG in notebook environment
     for cell in nb["cells"]:
         if cell["cell_type"] == "code":
             # Update MODEL_ID
             for i, line in enumerate(cell["source"]):
-                if line.strip().startswith("MODEL_ID ="):
-                    cell["source"][i] = f'MODEL_ID = "{model_id}"\n'
+                if "MODEL_ID = os.environ.get" in line:
+                    cell["source"][i] = f"MODEL_ID = os.environ.get('MODEL_ID', '{model_id}')\n"
                     break
-            # Update PRECISION
+            # Update CONFIG
             for i, line in enumerate(cell["source"]):
-                if line.strip().startswith("PRECISION ="):
-                    cell["source"][i] = f'PRECISION = "{precision}"\n'
+                if "CONFIG = os.environ.get" in line:
+                    cell["source"][i] = f"CONFIG = os.environ.get('BENCHMARK_CONFIG', '{config}')\n"
                     break
     
     # Save updated notebook

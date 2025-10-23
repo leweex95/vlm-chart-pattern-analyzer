@@ -8,7 +8,7 @@ from vlm_chart_pattern_analyzer.kaggle.utils import poll_status
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def run_pipeline(model_id, precision="fp32", notebook=None, kernel_path=None, gpu=True, dest="benchmark_results", kernel_id=None):
+def run_pipeline(model_id, config="baseline", notebook=None, kernel_path=None, gpu=True, dest="benchmark_results", kernel_id=None):
     """Run VLM benchmarking pipeline: deploy -> poll -> download"""
     
     cwd = Path(__file__).parent
@@ -35,7 +35,7 @@ def run_pipeline(model_id, precision="fp32", notebook=None, kernel_path=None, gp
     logging.info("VLM Benchmarking Pipeline")
     logging.info("=" * 60)
     logging.info(f"Model: {model_id}")
-    logging.info(f"Precision: {precision}")
+    logging.info(f"Config: {config}")
     logging.info(f"GPU: {gpu}")
     logging.info(f"Notebook: {notebook}")
     logging.info(f"Kernel path: {kernel_path}")
@@ -44,7 +44,7 @@ def run_pipeline(model_id, precision="fp32", notebook=None, kernel_path=None, gp
     # Step 1: Deploy
     logging.info("\nStep 1: Deploying kernel...")
     try:
-        deploy.run(model_id, precision, str(notebook), str(kernel_path), gpu)
+        deploy.run(model_id, config, str(notebook), str(kernel_path), gpu)
         logging.info("✓ Deployment completed")
     except Exception as e:
         logging.error(f"✗ Deployment failed: {str(e)}")

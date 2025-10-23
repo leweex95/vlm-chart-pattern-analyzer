@@ -1,11 +1,11 @@
 {
   "id": "leventecsibi/vlm-chart-pattern-benchmark",
   "title": "vlm-chart-pattern-benchmark",
-  "code_file": "benchmark.ipynb",
+  "code_file": "vlm-inference-benchmark.ipynb",
   "language": "python",
   "kernel_type": "notebook",
   "is_private": false,
-  "enable_gpu": true,
+  "enable_gpu": "true",
   "enable_internet": true,
   "dataset_sources": [
     "leventecsibi/chart-patterns"

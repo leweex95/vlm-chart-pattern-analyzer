@@ -70,20 +70,15 @@ BENCHMARK_CONFIGS = {
         "optimizations": [],
         "description": "FP16 mixed precision",
     },
-    "sglang": {
-        "precision": "fp16",
-        "optimizations": ["sglang"],
-        "description": "SGLang optimized inference",
-    },
-    "tensorrt": {
-        "precision": "fp16",
-        "optimizations": ["tensorrt"],
-        "description": "TensorRT compilation",
-    },
     "quantized-int8": {
         "precision": "int8",
         "optimizations": ["quantization"],
         "description": "INT8 quantization",
+    },
+    "quantized-int4": {
+        "precision": "int4",
+        "optimizations": ["quantization"],
+        "description": "INT4 quantization (NF4)",
     },
     "compiled": {
         "precision": "fp16",
@@ -211,13 +206,14 @@ class KaggleBenchmarkOrchestrator:
             else:
                 # Run the pipeline: deploy -> poll -> download
                 logger.info(f"Starting pipeline deployment...")
+                logger.info(f"  Config: {self.config}")
                 logger.info(f"  GPU: {self.gpu}")
                 logger.info(f"  Results directory: {deployment_results_dir}")
                 
                 # Note: run_pipeline will handle deploy -> poll -> download internally
                 run_pipeline(
                     model_id=model_id,
-                    precision="fp32",  # Notebook will handle both precisions
+                    config=self.config,
                     notebook=None,  # Use default
                     kernel_path=None,  # Use default
                     gpu=self.gpu,
