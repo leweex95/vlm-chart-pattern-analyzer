@@ -3,19 +3,19 @@
 Strategic VLM Benchmarking on Kaggle GPU.
 
 Strategy:
-- 3 VLM Models: Qwen2-VL-2B, LLaVA-1.6-8B, Phi-3-Vision
+- 3 VLM Models: Qwen2-VL-2B, LLaVA-1.6-Mistral-7B, Phi-3-Vision
+- 8 Optimization Configs: baseline, fp16, quantized-int8, quantized-int4, compiled, flash-attention, tensorrt, tensorrt-int8
 - 20 Chart Images per model
-- 3 Kaggle Deployments (one per model)
-- Each deployment tests both FP32 and FP16 precisions
-- Total: 3 deployments × 20 images × 2 precisions = 120 total inferences
+- Each deployment runs ONE config on ONE model
+- Total: 8 configs × 3 models × 20 images = 480 total inferences
 
 Why this approach:
-✓ Minimizes Kaggle deployments (3 instead of 120)
-✓ GPU context stays on one model per kernel
-✓ Better GPU memory management
-✓ Sequential processing per model is more reliable
-✓ Easy to parallelize deployments if needed
-✓ Clear results per model
+✓ Each Kaggle deployment tests ONE optimization config only
+✓ Avoids model reloading and GPU memory issues
+✓ Clear isolation between different optimization strategies
+✓ Easy to compare performance across configs
+✓ Can run configs in parallel or sequentially
+✓ Results are unambiguous (no config mixing)
 """
 import argparse
 import csv
@@ -55,8 +55,6 @@ MODELS = {
         "display_name": "Phi-3-Vision",
     },
 }
-
-PRECISIONS = ["fp32", "fp16"]
 
 # Optimization configurations
 BENCHMARK_CONFIGS = {
@@ -110,7 +108,7 @@ class KaggleBenchmarkOrchestrator:
         self,
         images_dir: str = "data/images",
         results_dir: str = "data/results/kaggle_benchmark",
-        kernel_id_prefix: str = "leventecsibi/vlm-chart-benchmark",
+        kernel_id_prefix: str = "leventecsibi/vlm-benchmark",
         config: str = "baseline",
         gpu: bool = True,
         dry_run: bool = False,
@@ -149,15 +147,15 @@ class KaggleBenchmarkOrchestrator:
         """Log the complete benchmarking plan."""
         images = self.get_images()
         num_models = len(MODELS)
-        num_precisions = len(PRECISIONS)
-        total_inferences = len(images) * num_models * num_precisions
+        # Each deployment runs ONE config (one precision + optimizations)
+        total_inferences = len(images) * num_models
         
         logger.info("\n" + "=" * 70)
         logger.info("KAGGLE VLM BENCHMARKING PLAN")
         logger.info("=" * 70)
         model_names = ", ".join([info["display_name"] for info in MODELS.values()])
         logger.info(f"Models: {len(MODELS)} ({model_names})")
-        logger.info(f"Precisions: {len(PRECISIONS)} ({', '.join(PRECISIONS)})")
+        logger.info(f"Config: {self.config} ({self.config_settings['precision']} + {', '.join(self.config_settings['optimizations']) if self.config_settings['optimizations'] else 'no optimizations'})")
         logger.info(f"Chart Images: {len(images)}")
         logger.info(f"Kaggle Deployments: {num_models} (one per model)")
         logger.info(f"Total Inferences: {total_inferences}")
@@ -168,10 +166,11 @@ class KaggleBenchmarkOrchestrator:
         for idx, (model_key, model_info) in enumerate(MODELS.items(), 1):
             logger.info(f"\n  [{idx}] {model_info['display_name']}")
             logger.info(f"      Model ID: {model_info['model_id']}")
-            logger.info(f"      Precisions: {', '.join(PRECISIONS)}")
+            logger.info(f"      Precision: {self.config_settings['precision']}")
+            logger.info(f"      Optimizations: {', '.join(self.config_settings['optimizations']) if self.config_settings['optimizations'] else 'None'}")
             logger.info(f"      Images: {len(images)}")
-            logger.info(f"      Total inferences: {len(images) * len(PRECISIONS)}")
-            kernel_id = f"{self.kernel_id_prefix}-{model_key}"
+            logger.info(f"      Total inferences: {len(images)}")
+            kernel_id = f"{self.kernel_id_prefix}-{self.config}-{model_key}"
             logger.info(f"      Kernel ID: {kernel_id}")
         
         logger.info("\n" + "=" * 70)
@@ -200,7 +199,7 @@ class KaggleBenchmarkOrchestrator:
         deployment_results_dir = self.results_dir / model_key
         deployment_results_dir.mkdir(parents=True, exist_ok=True)
         
-        kernel_id = f"{self.kernel_id_prefix}-{model_key}"
+        kernel_id = f"{self.kernel_id_prefix}-{self.config}-{model_key}"
         
         try:
             if self.dry_run:

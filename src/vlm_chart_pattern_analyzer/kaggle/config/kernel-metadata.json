@@ -1,6 +1,6 @@
 {
-  "id": "leventecsibi/vlm-chart-pattern-benchmark",
-  "title": "vlm-chart-pattern-benchmark",
+  "id": "leventecsibi/vlm-single-config-benchmark",
+  "title": "VLM Single Config Benchmark",
   "code_file": "vlm-inference-benchmark.ipynb",
   "language": "python",
   "kernel_type": "notebook",
