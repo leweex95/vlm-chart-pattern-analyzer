@@ -46,9 +46,9 @@ MODELS = {
         "model_id": "Qwen/Qwen2-VL-2B-Instruct",
         "display_name": "Qwen2-VL-2B",
     },
-    "llava-1.6-8b": {
-        "model_id": "llava-hf/llava-1.6-8b-hf",
-        "display_name": "LLaVA-1.6-8B",
+    "llava-1.6-mistral-7b": {
+        "model_id": "llava-hf/llava-v1.6-mistral-7b-hf",
+        "display_name": "LLaVA-1.6-Mistral-7B",
     },
     "phi-3-vision": {
         "model_id": "microsoft/Phi-3-vision-128k-instruct",

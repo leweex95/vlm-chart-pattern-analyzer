@@ -91,6 +91,18 @@ ERROR_PATTERNS = [
         description="JSON parsing error",
         fix_suggestion="Check JSON file syntax and encoding",
     ),
+    ErrorPattern(
+        pattern=r"HTTPStatusError.*404 Not Found.*huggingface\.co/api/models/([^/]+/[^/]+)",
+        error_type="HTTPStatusError",
+        description="Model not found on Hugging Face",
+        fix_suggestion="Check if the model ID is correct on https://huggingface.co/models",
+    ),
+    ErrorPattern(
+        pattern=r"HTTPStatusError.*Client error '(\d+)[^']*'",
+        error_type="HTTPStatusError",
+        description="HTTP client error",
+        fix_suggestion="Check the URL and authentication credentials",
+    ),
 ]
 
 
