@@ -1,3 +1,5 @@
+[![Build and push Docker image](https://github.com/leweex95/vlm-chart-pattern-analyzer/actions/workflows/docker-build.yml/badge.svg)](https://github.com/leweex95/vlm-chart-pattern-analyzer/actions/workflows/docker-build.yml)
+
 # VLM Chart Pattern Analyzer
 
 A high-performance benchmarking suite for Vision Language Models (VLMs) detecting chart patterns in financial trading data (stock/forex).
