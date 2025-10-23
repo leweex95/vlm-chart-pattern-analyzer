@@ -70,9 +70,9 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
         # Update kernel ID if provided
         if kernel_id:
             kernel_meta["id"] = kernel_id
-            # Update title to match
-            model_name = model_id.split('/')[-1]
-            kernel_meta["title"] = f"VLM Benchmark {config} {model_name}"
+            # Use the kernel slug as title to avoid slug mismatch warnings
+            title_from_slug = kernel_id.split('/')[-1].replace('-', ' ').title()
+            kernel_meta["title"] = title_from_slug
         
         if gpu is not None:
             kernel_meta["enable_gpu"] = str(gpu).lower()

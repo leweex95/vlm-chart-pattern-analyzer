@@ -201,10 +201,8 @@ class KaggleBenchmarkOrchestrator:
         deployment_results_dir = self.results_dir / model_key
         deployment_results_dir.mkdir(parents=True, exist_ok=True)
         
-        # Add timestamp to kernel ID to avoid conflicts
-        import time
-        timestamp = int(time.time())
-        kernel_id = f"{self.kernel_id_prefix}-{self.config}-{model_key}-{timestamp}"
+        # Use simple kernel ID without timestamp (Kaggle will version automatically)
+        kernel_id = f"{self.kernel_id_prefix}-{self.config}-{model_key}"
         
         try:
             if self.dry_run:
