@@ -16,7 +16,6 @@ python = ">=3.11,<3.14"
 # Core dependencies for production
 # Note: PyTorch 2.8.0 is available but torchvision compatibility is not yet resolved.
 # For local CPU development, using 2.3.0. On Kaggle GPU, upgrade to torch==2.8.0+cu124
-transformers = "^4.40.0"
 pillow = "^10.0.0"
 accelerate = "^0.27.0"
 pandas = "^2.0.0"
@@ -32,6 +31,7 @@ optimum = {extras = ["onnxruntime"], version = "^2.0.0"}
 torch = "2.8.0"
 torchvision = "<0.24.0"
 sglang = "<0.5.3"
+transformers = "4.37.2"
 
 
 [tool.poetry.group.metatrader]
