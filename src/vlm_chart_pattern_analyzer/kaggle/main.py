@@ -44,7 +44,7 @@ def run_pipeline(model_id, config="baseline", notebook=None, kernel_path=None, g
     # Step 1: Deploy
     logging.info("\nStep 1: Deploying kernel...")
     try:
-        deploy.run(model_id, config, str(notebook), str(kernel_path), gpu)
+        deploy.run(model_id, config, str(notebook), str(kernel_path), gpu, kernel_id)
         logging.info("✓ Deployment completed")
     except Exception as e:
         logging.error(f"✗ Deployment failed: {str(e)}")
