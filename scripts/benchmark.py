@@ -54,6 +54,10 @@ MODELS = {
         "model_id": "microsoft/Phi-3-vision-128k-instruct",
         "display_name": "Phi-3-Vision",
     },
+    "smolvlm2-2.2b": {
+        "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+        "display_name": "SmolVLM2-2.2B",
+    },
 }
 
 # Optimization configurations
@@ -112,6 +116,7 @@ class KaggleBenchmarkOrchestrator:
         config: str = "baseline",
         gpu: bool = True,
         dry_run: bool = False,
+        models: Dict = None,
     ):
         self.images_dir = Path(images_dir)
         self.results_dir = Path(results_dir)
@@ -119,6 +124,7 @@ class KaggleBenchmarkOrchestrator:
         self.config = config
         self.gpu = gpu
         self.dry_run = dry_run
+        self.models = models or MODELS
         
         # Validate config
         if config not in BENCHMARK_CONFIGS:
@@ -146,15 +152,15 @@ class KaggleBenchmarkOrchestrator:
     def log_deployment_plan(self):
         """Log the complete benchmarking plan."""
         images = self.get_images()
-        num_models = len(MODELS)
+        num_models = len(self.models)
         # Each deployment runs ONE config (one precision + optimizations)
         total_inferences = len(images) * num_models
         
         logger.info("\n" + "=" * 70)
         logger.info("KAGGLE VLM BENCHMARKING PLAN")
         logger.info("=" * 70)
-        model_names = ", ".join([info["display_name"] for info in MODELS.values()])
-        logger.info(f"Models: {len(MODELS)} ({model_names})")
+        model_names = ", ".join([info["display_name"] for info in self.models.values()])
+        logger.info(f"Models: {len(self.models)} ({model_names})")
         logger.info(f"Config: {self.config} ({self.config_settings['precision']} + {', '.join(self.config_settings['optimizations']) if self.config_settings['optimizations'] else 'no optimizations'})")
         logger.info(f"Chart Images: {len(images)}")
         logger.info(f"Kaggle Deployments: {num_models} (one per model)")
@@ -163,7 +169,7 @@ class KaggleBenchmarkOrchestrator:
         logger.info("=" * 70)
         logger.info("\nDeployment Schedule:")
         
-        for idx, (model_key, model_info) in enumerate(MODELS.items(), 1):
+        for idx, (model_key, model_info) in enumerate(self.models.items(), 1):
             logger.info(f"\n  [{idx}] {model_info['display_name']}")
             logger.info(f"      Model ID: {model_info['model_id']}")
             logger.info(f"      Precision: {self.config_settings['precision']}")
@@ -290,6 +296,10 @@ class KaggleBenchmarkOrchestrator:
         # Get summary statistics
         summary = self.collector.get_summary_stats()
         
+        if not summary.get('num_inferences'):
+            logger.warning("No results available yet - kernels still running on Kaggle")
+            return
+        
         logger.info(f"\nSummary Statistics:")
         logger.info(f"  Total inferences: {summary['num_inferences']}")
         logger.info(f"  Models: {', '.join(summary['models'])}")
@@ -379,35 +389,35 @@ class KaggleBenchmarkOrchestrator:
             )
             writer.writeheader()
             
+            precision = self.config_settings['precision']
             for image_file in image_files:
-                for precision in PRECISIONS:
-                    # Generate realistic mock data
-                    if model_key == "qwen2-vl-2b":
-                        latency_base = 150 if precision == "fp16" else 250
-                        memory_base = 100 if precision == "fp16" else 150
-                    elif model_key == "llava-1.6-8b":
-                        latency_base = 400 if precision == "fp16" else 700
-                        memory_base = 300 if precision == "fp16" else 500
-                    else:  # phi-3-vision
-                        latency_base = 300 if precision == "fp16" else 550
-                        memory_base = 200 if precision == "fp16" else 350
-                    
-                    latency = latency_base + random.uniform(-20, 20)
-                    memory = memory_base + random.uniform(-10, 10)
-                    tokens = random.randint(100, 200)
-                    throughput = tokens / (latency / 1000)
-                    
-                    writer.writerow({
-                        "image_filename": image_file.name,
-                        "model_id": MODELS[model_key]["model_id"],
-                        "precision": precision,
-                        "device": "cuda",
-                        "latency_ms": f"{latency:.2f}",
-                        "memory_used_mb": f"{memory:.2f}",
-                        "tokens_generated": tokens,
-                        "throughput_tokens_per_sec": f"{throughput:.2f}",
-                        "timestamp": datetime.now().isoformat(),
-                    })
+                # Generate realistic mock data
+                if model_key == "qwen2-vl-2b" or model_key == "smolvlm2-2.2b":
+                    latency_base = 150 if precision in ["fp16", "int8", "int4"] else 250
+                    memory_base = 100 if precision in ["fp16", "int8", "int4"] else 150
+                elif "llava" in model_key:
+                    latency_base = 400 if precision in ["fp16", "int8", "int4"] else 700
+                    memory_base = 300 if precision in ["fp16", "int8", "int4"] else 500
+                else:  # phi-3-vision
+                    latency_base = 300 if precision in ["fp16", "int8", "int4"] else 550
+                    memory_base = 200 if precision in ["fp16", "int8", "int4"] else 350
+                
+                latency = latency_base + random.uniform(-20, 20)
+                memory = memory_base + random.uniform(-10, 10)
+                tokens = random.randint(100, 200)
+                throughput = tokens / (latency / 1000)
+                
+                writer.writerow({
+                    "image_filename": image_file.name,
+                    "model_id": self.models[model_key]["model_id"],
+                    "precision": precision,
+                    "device": "cuda",
+                    "latency_ms": f"{latency:.2f}",
+                    "memory_used_mb": f"{memory:.2f}",
+                    "tokens_generated": tokens,
+                    "throughput_tokens_per_sec": f"{throughput:.2f}",
+                    "timestamp": datetime.now().isoformat(),
+                })
     
     def run_benchmark(self):
         """Run the complete benchmark orchestration."""
@@ -417,22 +427,22 @@ class KaggleBenchmarkOrchestrator:
             
             # Run deployments
             successful_deployments = 0
-            for idx, (model_key, model_info) in enumerate(MODELS.items(), 1):
+            for idx, (model_key, model_info) in enumerate(self.models.items(), 1):
                 success = self.deploy_model_benchmark(
                     model_key,
                     model_info,
                     deployment_index=idx,
-                    total_deployments=len(MODELS),
+                    total_deployments=len(self.models),
                 )
                 if success:
                     successful_deployments += 1
                 
                 # Add delay between deployments to avoid rate limiting
-                if idx < len(MODELS):
+                if idx < len(self.models):
                     logger.info("\nWaiting 30 seconds before next deployment...")
                     time.sleep(30)
             
-            logger.info(f"\n✓ Completed {successful_deployments}/{len(MODELS)} deployments")
+            logger.info(f"\n✓ Completed {successful_deployments}/{len(self.models)} deployments")
             
             # Aggregate and report results
             if successful_deployments > 0:
@@ -494,6 +504,13 @@ Examples:
         help="Output directory for benchmark results"
     )
     parser.add_argument(
+        "--models",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Specific models to benchmark (e.g., qwen2-vl-2b smolvlm2-2.2b). If not specified, all models will be benchmarked."
+    )
+    parser.add_argument(
         "--kernel-id-prefix",
         type=str,
         default="leventecsibi/vlm-chart-benchmark",
@@ -512,6 +529,14 @@ Examples:
     
     args = parser.parse_args()
     
+    # Filter models if specified
+    models_to_benchmark = MODELS
+    if args.models:
+        models_to_benchmark = {k: v for k, v in MODELS.items() if k in args.models}
+        if not models_to_benchmark:
+            logger.error(f"No valid models found. Available: {', '.join(MODELS.keys())}")
+            sys.exit(1)
+    
     # Create orchestrator
     orchestrator = KaggleBenchmarkOrchestrator(
         images_dir=args.images_dir,
@@ -520,6 +545,7 @@ Examples:
         config=args.config,
         gpu=not args.no_gpu,
         dry_run=args.dry_run,
+        models=models_to_benchmark,
     )
     
     # Run benchmark
