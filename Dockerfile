@@ -3,7 +3,6 @@ FROM python:3.11-slim AS builder
 
 # Install poetry and system dependencies in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
     curl \
     && rm -rf /var/lib/apt/lists/* \
     && curl -sSL https://install.python-poetry.org | python3 - \
@@ -24,15 +23,10 @@ COPY pyproject.toml ./
 # Install PyTorch CPU version explicitly first to avoid pulling CUDA
 # Note: Removed cache mount for Windows compatibility
 RUN pip install --no-cache-dir torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cpu && \
-    poetry install --only main --with inference --with charting --no-root --no-directory
+    poetry install --only main --no-root --no-directory --no-cache
 
 # Runtime stage - minimal image
 FROM python:3.11-slim AS runtime
-
-# Install only git (required for transformers)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -41,9 +35,9 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application files
+COPY pyproject.toml ./
 COPY src ./src
 COPY scripts ./scripts
-COPY pyproject.toml ./
 
 # Create necessary directories
 RUN mkdir -p \
@@ -55,12 +49,7 @@ RUN mkdir -p \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TRANSFORMERS_CACHE=/app/.cache/huggingface \
-    HF_HOME=/app/.cache/huggingface \
-    HF_HUB_ENABLE_HF_TRANSFER=1
-
-# Health check to verify container is responsive
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)"
+    HF_HOME=/app/.cache/huggingface
 
 # Use non-root user for security
 RUN useradd -m -u 1000 appuser && \
