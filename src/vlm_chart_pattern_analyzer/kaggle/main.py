@@ -44,7 +44,11 @@ def run_pipeline(model_id, config="baseline", notebook=None, kernel_path=None, g
     # Step 1: Deploy
     logging.info("\nStep 1: Deploying kernel...")
     try:
-        deploy.run(model_id, config, str(notebook), str(kernel_path), gpu, kernel_id)
+        actual_kernel_id = deploy.run(model_id, config, str(notebook), str(kernel_path), gpu, kernel_id)
+        # Use the actual kernel ID returned by Kaggle, or fall back to the requested one
+        if actual_kernel_id:
+            kernel_id = actual_kernel_id
+            logging.info(f"Using actual kernel ID from Kaggle: {kernel_id}")
         logging.info("✓ Deployment completed")
     except Exception as e:
         logging.error(f"✗ Deployment failed: {str(e)}")

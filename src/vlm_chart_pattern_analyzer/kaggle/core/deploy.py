@@ -90,12 +90,22 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
             check=True, capture_output=True, text=True, encoding='utf-8'
         )
         
+        # Parse the actual kernel ID from Kaggle's response
+        actual_kernel_id = None
         if result.stdout:
             logging.debug(f"Kaggle push output: {result.stdout}")
+            # Look for patterns like "Successfully pushed to username/kernel-slug"
+            import re
+            match = re.search(r'(?:pushed to|Kernel version \d+ for|at)\s+(\S+/[\w-]+)', result.stdout)
+            if match:
+                actual_kernel_id = match.group(1)
+                logging.info(f"✓ Kernel deployed successfully: {actual_kernel_id}")
+            else:
+                logging.info("✓ Kernel deployed successfully")
         if result.stderr:
             logging.debug(f"Kaggle push stderr: {result.stderr}")
         
-        logging.info("✓ Kernel deployed successfully")
+        return actual_kernel_id
 
 
 def _get_kaggle_command():
