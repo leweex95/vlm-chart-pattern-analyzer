@@ -9,7 +9,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", kernel_path=".", gpu=None):
+def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", kernel_path=".", gpu=None, kernel_id=None):
     """
     Deploy Kaggle notebook kernel for VLM inference benchmarking.
     
@@ -19,6 +19,7 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
         notebook: Path to notebook template
         kernel_path: Path to kernel configuration directory
         gpu: Enable GPU (True/False/None)
+        kernel_id: Kaggle kernel ID (e.g., "leventecsibi/vlm-chart-benchmark-baseline-qwen2-vl-2b")
     """
     logging.info(f"Deploying VLM benchmark: {model_id} (config={config})")
     
@@ -49,8 +50,17 @@ def run(model_id, config="baseline", notebook="vlm-inference-benchmark.ipynb", k
     metadata_path = Path(kernel_path) / "kernel-metadata.json"
     with open(metadata_path, "r", encoding="utf-8") as f:
         kernel_meta = json.load(f)
+    
+    # Update kernel ID if provided
+    if kernel_id:
+        kernel_meta["id"] = kernel_id
+        # Update title to match
+        model_name = model_id.split('/')[-1]
+        kernel_meta["title"] = f"VLM Benchmark {config} {model_name}"
+    
     if gpu is not None:
         kernel_meta["enable_gpu"] = str(gpu).lower()
+    
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(kernel_meta, f, indent=2)
     
