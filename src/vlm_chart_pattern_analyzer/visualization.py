@@ -35,7 +35,7 @@ def plot_latency_by_model_precision(df: pd.DataFrame, output_path: str = None) -
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -61,7 +61,7 @@ def plot_memory_by_model_precision(df: pd.DataFrame, output_path: str = None) ->
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -90,7 +90,7 @@ def plot_latency_vs_memory(df: pd.DataFrame, output_path: str = None) -> go.Figu
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -118,7 +118,7 @@ def plot_tokens_generated(df: pd.DataFrame, output_path: str = None) -> go.Figur
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -154,7 +154,7 @@ def plot_model_comparison_heatmap(df: pd.DataFrame, metric: str = 'latency_ms', 
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -174,7 +174,7 @@ def plot_comprehensive_dashboard(df: pd.DataFrame, output_dir: str = 'data/resul
     plot_model_comparison_heatmap(df, 'latency_ms', str(output_path / 'heatmap_latency.html'))
     plot_model_comparison_heatmap(df, 'memory_mb', str(output_path / 'heatmap_memory.html'))
     
-    print(f"✓ All visualizations created in {output_dir}/")
+    print(f"All visualizations created in {output_dir}/")
 
 
 def create_summary_statistics(df: pd.DataFrame, output_path: str = 'data/results/summary.txt') -> None:
@@ -226,7 +226,7 @@ def create_summary_statistics(df: pd.DataFrame, output_path: str = 'data/results
     with open(output_file, 'w') as f:
         f.write('\n'.join(summary))
     
-    print(f"✓ Summary saved to {output_path}")
+    print(f"Summary saved to {output_path}")
     
     # Also print to console
     print('\n' + '\n'.join(summary))
@@ -237,7 +237,7 @@ def plot_similarity_heatmap(similarity_dict: Dict, output_path: str = None) -> g
     import numpy as np
     
     if not similarity_dict:
-        print("⚠️ No similarity data to visualize")
+        print("No similarity data to visualize")
         return None
     
     # Extract data from first entry to get models
@@ -274,7 +274,7 @@ def plot_similarity_heatmap(similarity_dict: Dict, output_path: str = None) -> g
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -282,7 +282,7 @@ def plot_similarity_heatmap(similarity_dict: Dict, output_path: str = None) -> g
 def plot_model_agreement_bars(agreement_dict: Dict, output_path: str = None) -> go.Figure:
     """Create bar chart of model pair agreement."""
     if not agreement_dict:
-        print("⚠️ No agreement data to visualize")
+        print("No agreement data to visualize")
         return None
     
     pairs = list(agreement_dict.keys())
@@ -314,7 +314,7 @@ def plot_model_agreement_bars(agreement_dict: Dict, output_path: str = None) -> 
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 
@@ -324,7 +324,7 @@ def plot_similarity_distribution(similarity_dict: Dict, output_path: str = None)
     import numpy as np
     
     if not similarity_dict:
-        print("⚠️ No similarity data to visualize")
+        print("No similarity data to visualize")
         return None
     
     all_similarities = []
@@ -350,7 +350,7 @@ def plot_similarity_distribution(similarity_dict: Dict, output_path: str = None)
     
     if output_path:
         fig.write_html(output_path)
-        print(f"✓ Saved: {output_path}")
+        print(f"Saved: {output_path}")
     
     return fig
 

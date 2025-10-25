@@ -12,21 +12,35 @@ requires-python = ">=3.11"
 packages = [{include = "vlm_chart_pattern_analyzer", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
-# Core dependencies for production
-torch = "2.3.0"
-torchvision = "0.18.0"
-transformers = "^4.40.0"
+python = ">=3.11,<3.14"
 pillow = "^10.0.0"
 accelerate = "^0.27.0"
 pandas = "^2.0.0"
 psutil = "^5.9.0"
-bitsandbytes = "^0.43.0"
-MetaTrader5 = "^5.0.0"
 matplotlib = "^3.8.0"
 numpy = ">=1.24.0,<2.0.0"
 plotly = "^5.18.0"
 scikit-learn = "^1.3.0"
+# Kaggle automation
+kaggle = "^1.5.0"
+# Optimum for optimized inference
+torch = "2.8.0"
+torchvision = "<0.24.0"
+sglang = "<0.5.3"
+transformers = ">=4.57.1"
+num2words = "^0.5.14"
+fastapi = "^0.120.0"
+uvicorn = "^0.38.0"
+python-multipart = "^0.0.6"
+datasets = "^4.3.0"
+huggingface-hub = "^0.36.0"
+
+
+[tool.poetry.group.metatrader]
+optional = true
+
+[tool.poetry.group.metatrader.dependencies]
+MetaTrader5 = "^5.0.45"
 
 [tool.poetry.group.dev]
 optional = true

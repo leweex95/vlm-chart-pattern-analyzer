@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-hello
+spec:
+  type: ClusterIP
+  selector:
+    app: mlflow-hello
+  ports:
+    - port: 80
+      targetPort: 80

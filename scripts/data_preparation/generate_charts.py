@@ -207,7 +207,7 @@ def main() -> None:
 
             create_candlestick_chart(chart_df, output_path, title)
 
-        logging.info(f"✓ Successfully generated {len(chart_sections)} chart images in {output_dir}")
+        logging.info(f"Successfully generated {len(chart_sections)} chart images in {output_dir}")
 
     except KeyboardInterrupt:
         logging.info("Operation cancelled by user")

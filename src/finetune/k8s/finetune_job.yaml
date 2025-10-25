@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: finetune-job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: finetune
+        image: csibilevente14/vlm-finetune:2025-10-25-1830
+        command: ["torchrun", "--nproc_per_node=2", "finetune.py"]
+        resources:
+          limits:
+            nvidia.com/gpu: 2

@@ -1,0 +1,16 @@
+{
+  "id": "leventecsibi/vlm-single-config-benchmark",
+  "title": "VLM Single Config Benchmark",
+  "code_file": "vlm-inference-benchmark.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": "true",
+  "enable_internet": true,
+  "dataset_sources": [
+    "leventecsibi/chart-patterns"
+  ],
+  "environment_variables": {
+    "CHART_IMAGES_DIR": "/kaggle/input/chart-patterns"
+  }
+}

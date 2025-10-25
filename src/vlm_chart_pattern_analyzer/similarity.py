@@ -126,7 +126,7 @@ def analyze_benchmark_similarities(results_df: pd.DataFrame) -> Dict:
                 'max_similarity': float(np.max(sim_matrix[np.triu_indices_from(sim_matrix, k=1)]))
             }
         except Exception as e:
-            print(f"  ⚠️ Error analyzing {image_name}: {e}")
+            print(f"  Error analyzing {image_name}: {e}")
             continue
     
     # Compute model-pair agreement across all images
@@ -234,4 +234,4 @@ def save_similarity_analysis(analysis: Dict, output_path: str) -> None:
     """Save similarity analysis to JSON file."""
     with open(output_path, 'w') as f:
         json.dump(analysis, f, indent=2)
-    print(f"✓ Similarity analysis saved to {output_path}")
+    print(f"Similarity analysis saved to {output_path}")

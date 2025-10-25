@@ -56,9 +56,15 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+# *.ipynb
 
 # Temporary files
 tmp/
 temp/
 *.tmp
+
+# Temporary documentation files
+*.md
+!README.md
+
+.env

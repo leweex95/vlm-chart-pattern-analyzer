@@ -50,18 +50,18 @@ def load_model(model_name: str = "qwen2-vl-2b", precision: str = "fp32") -> Tupl
     })
     
     if precision == "fp16":
-        kwargs["torch_dtype"] = torch.float16
+        kwargs["dtype"] = torch.float16
     elif precision == "int8":
         # INT8 quantization
         quantization_config = BitsAndBytesConfig(load_in_8bit=True)
         kwargs["quantization_config"] = quantization_config
         kwargs["device_map"] = "auto"  # INT8 needs auto device mapping
     else:  # fp32
-        kwargs["torch_dtype"] = torch.float32
+        kwargs["dtype"] = torch.float32
     
     model = AutoModelForVision2Seq.from_pretrained(model_id, **kwargs)
     
-    print(f"✓ Model loaded successfully ({precision})")
+    print(f"Model loaded successfully ({precision})")
     return model, processor
 
 
