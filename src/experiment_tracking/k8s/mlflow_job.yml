@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mlflow-hello
+  namespace: vlm-inference
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: mlflow-hello
+        image: csibilevente14/mlflow-hello:2025-10-25-1700
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MLFLOW_TRACKING_URI
+          value: http://10.42.2.10:5000
+      restartPolicy: Never
