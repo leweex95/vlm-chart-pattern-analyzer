@@ -1,6 +1,7 @@
 """Metrics collection and analysis for VLM benchmarking."""
 import json
 import csv
+import logging
 from pathlib import Path
 from typing import Dict, List, Any
 from dataclasses import dataclass, asdict
@@ -19,6 +20,9 @@ class BenchmarkMetrics:
     tokens_generated: int  # Total tokens generated in output
     throughput_tokens_per_sec: float  # Tokens generated per second
     timestamp: str
+    optimizations: str = ""
+    response: str = ""
+    error: str = ""
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "BenchmarkMetrics":
@@ -43,15 +47,21 @@ class MetricsCollector:
     
     def add_metrics_from_csv(self, csv_path: Path) -> None:
         """Load metrics from CSV file."""
-        with open(csv_path, "r") as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Convert numeric fields
-                row["latency_ms"] = float(row["latency_ms"])
-                row["memory_used_mb"] = float(row["memory_used_mb"])
-                row["tokens_generated"] = int(row["tokens_generated"])
-                row["throughput_tokens_per_sec"] = float(row["throughput_tokens_per_sec"])
-                
+                # Convert numeric fields, handling empty strings
+                try:
+                    row["latency_ms"] = float(row["latency_ms"]) if row["latency_ms"] else 0.0
+                    row["memory_used_mb"] = float(row["memory_used_mb"]) if row["memory_used_mb"] else 0.0
+                    row["tokens_generated"] = int(row["tokens_generated"]) if row["tokens_generated"] else 0
+                    row["throughput_tokens_per_sec"] = float(row["throughput_tokens_per_sec"]) if row["throughput_tokens_per_sec"] else 0.0
+                except ValueError as e:
+                    logging.warning(f"Skipping row with invalid numeric data: {e}, row: {row}")
+                    continue
+                row["response"] = row.get("response", "")
+                row["optimizations"] = row.get("optimizations", "")
+                row["error"] = row.get("error", "")
                 self.metrics.append(BenchmarkMetrics.from_dict(row))
     
     def add_metrics_from_json(self, json_path: Path) -> None:
@@ -154,15 +164,20 @@ class MetricsCollector:
         
         return comparison
     
-    def export_to_csv(self, output_path: Path) -> None:
-        """Export metrics to CSV."""
+    def export_to_csv(self, output_path: Path, append: bool = False) -> None:
+        """Export metrics to CSV. If append=True, append to file instead of overwriting."""
         if not self.metrics:
             return
-        
-        with open(output_path, "w", newline="") as f:
-            fieldnames = list(vars(self.metrics[0]).keys())
+        mode = "a" if append and output_path.exists() else "w"
+        # Always include all possible fields
+        fieldnames = [
+            "image_filename", "model_id", "precision", "optimizations", "device", "latency_ms", "memory_used_mb",
+            "tokens_generated", "throughput_tokens_per_sec", "timestamp", "response", "error"
+        ]
+        with open(output_path, mode, newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
+            if mode == "w":
+                writer.writeheader()
             for metric in self.metrics:
                 writer.writerow(metric.to_dict())
     

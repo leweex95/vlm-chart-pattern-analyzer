@@ -9,5 +9,8 @@
   "enable_internet": true,
   "dataset_sources": [
     "leventecsibi/chart-patterns"
-  ]
+  ],
+  "environment_variables": {
+    "CHART_IMAGES_DIR": "/kaggle/input/chart-patterns"
+  }
 }

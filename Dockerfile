@@ -1,3 +1,7 @@
+# For Docker build and push, use the following naming convention for the image:
+# csibilevente14/vlm-chart-pattern-analyzer:YYYY-MM-DD-HHMM 
+# docker build -t csibilevente14/vlm-chart-pattern-analyzer:$(date +%Y-%m-%d-%H%M) .
+
 # Multi-stage build for optimized image size
 FROM python:3.11-slim AS builder
 
@@ -22,8 +26,8 @@ COPY pyproject.toml ./
 # Install dependencies (excluding dev dependencies)
 # Install PyTorch CPU version explicitly first to avoid pulling CUDA
 # Note: Removed cache mount for Windows compatibility
-RUN pip install --no-cache-dir torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cpu && \
-    poetry install --only main --no-root --no-directory --no-cache
+#RUN pip install --no-cache-dir torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cpu && \
+RUN poetry install --only main --no-root --no-cache
 
 # Runtime stage - minimal image
 FROM python:3.11-slim AS runtime
@@ -56,5 +60,5 @@ RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-# Default command - run benchmark with limited images
-CMD ["python", "scripts/benchmark.py", "--limit", "5"]
+# Default command - run API server
+CMD ["uvicorn", "src.vlm_chart_pattern_analyzer.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

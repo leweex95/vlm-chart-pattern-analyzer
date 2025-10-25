@@ -18,33 +18,66 @@ def run(dest="benchmark_results", kernel_id=None):
 
     kaggle_cmd = _get_kaggle_command()
 
-    # Log files
-    stdout_log = dest_path / "kaggle_cli_stdout.log"
-    stderr_log = dest_path / "kaggle_cli_stderr.log"
-
     logging.info(f"Downloading results from {kernel_id} to {dest_path}")
     
-    # Run Kaggle CLI
-    result = subprocess.run(
-        [*kaggle_cmd, "kernels", "output", kernel_id, "-p", str(dest_path).replace("\\", "/")],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8"
-    )
+    # Download to a temp location first to avoid overwriting
+    import tempfile
+    with tempfile.TemporaryDirectory() as temp_download_dir:
+        temp_path = Path(temp_download_dir)
+        
+        # Run Kaggle CLI to download to temp directory
+        result = subprocess.run(
+            [*kaggle_cmd, "kernels", "output", kernel_id, "-p", str(temp_path).replace("\\", "/"), "--force"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=False  # Get bytes instead of text to handle encoding issues
+        )
 
-    # Write all outputs to files
-    stdout_log.write_text(result.stdout, encoding="utf-8")
-    stderr_log.write_text(result.stderr, encoding="utf-8")
+        # Decode outputs with error handling
+        try:
+            stdout_text = result.stdout.decode('utf-8')
+        except UnicodeDecodeError:
+            stdout_text = result.stdout.decode('latin1', errors='replace')
+        
+        try:
+            stderr_text = result.stderr.decode('utf-8')
+        except UnicodeDecodeError:
+            stderr_text = result.stderr.decode('latin1', errors='replace')
 
-    if result.returncode != 0:
-        # Check if download actually succeeded despite return code
-        if "Output file downloaded to" not in stdout_log.read_text():
-            logging.warning("Kaggle CLI failed (non-zero exit code). Check stdout/stderr log files.")
+        if result.returncode != 0:
+            # Check if download actually succeeded despite return code
+            if "Output file downloaded to" not in stdout_text:
+                logging.warning("Kaggle CLI failed (non-zero exit code).")
+            else:
+                logging.info("Download succeeded despite non-zero return code")
         else:
-            logging.info("Download succeeded despite non-zero return code")
-    else:
-        logging.info("✓ Results downloaded successfully")
+            logging.info("Results downloaded successfully")
+        
+        # Now move the results from the temp directory to the destination
+        # Kaggle downloads to kernel_id/ subdirectory, find and copy the CSV
+        logging.info(f"Listing all files in temp directory {temp_path}:")
+        for item in temp_path.rglob('*'):
+            logging.info(f"  {item.relative_to(temp_path)}")
+        
+        for item in temp_path.rglob('benchmark_results.csv'):
+            logging.info(f"Found CSV at: {item}")
+            import shutil
+            shutil.copy2(item, dest_path / 'benchmark_results.csv')
+            logging.info(f"Copied CSV to: {dest_path / 'benchmark_results.csv'}")
+        
+        # Also copy any other result files (boot markers, diagnostics, etc.)
+        for item in temp_path.rglob('*.txt'):
+            logging.info(f"Found result file at: {item}")
+            import shutil
+            shutil.copy2(item, dest_path / item.name)
+            logging.info(f"Copied result file to: {dest_path / item.name}")
+        
+        # Explicitly copy diagnostics file if it exists
+        for item in temp_path.rglob('*diagnostics*'):
+            logging.info(f"Found diagnostics-related file at: {item}")
+            import shutil
+            shutil.copy2(item, dest_path / item.name)
+            logging.info(f"Copied diagnostics file to: {dest_path / item.name}")
 
 
 def _get_kaggle_command():
