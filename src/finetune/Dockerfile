@@ -1,13 +1,11 @@
 # Use official PyTorch image with CUDA
-FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Set working directory
 WORKDIR /app
 
-RUN pip install --upgrade pip \
-    && pip install "transformers" "datasets" "pillow" "accelerate" "einops" "flash-attn<=2.8.3"
+RUN apt-get update && apt-get install -y python3-pip \
+    && pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cu121 \
+    && pip install transformers>=4.57.1 datasets pillow accelerate einops flash-attn
 
 # Copy fine-tuning scripts and data
 COPY finetune.py ./finetune.py
