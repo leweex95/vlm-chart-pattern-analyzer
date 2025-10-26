@@ -18,9 +18,11 @@ def run_inference(image_path: Path, model, processor, model_name: str = "qwen2-v
     Returns:
         Dictionary with metrics and results
     """
+    print(f"Opening image: {image_path}")
     image = Image.open(image_path)
     
     prompt = "Analyze this trading chart and identify any chart patterns present (e.g., head and shoulders, double top, triangle, flag, wedge). Describe the pattern and trend direction."
+    print("Prompt prepared, processing inputs...")
     
     # Prepare inputs based on model
     if model_name == "qwen2-vl-2b":
@@ -53,9 +55,11 @@ def run_inference(image_path: Path, model, processor, model_name: str = "qwen2-v
     mem_before = process.memory_info().rss / 1024 / 1024  # MB
     
     # Measure inference time
+    print("Starting model generation...")
     start_time = time.perf_counter()
     outputs = model.generate(**inputs, max_new_tokens=200)
     end_time = time.perf_counter()
+    print("Model generation completed")
     
     # Get memory after
     mem_after = process.memory_info().rss / 1024 / 1024  # MB
@@ -64,11 +68,13 @@ def run_inference(image_path: Path, model, processor, model_name: str = "qwen2-v
     latency_ms = (end_time - start_time) * 1000
     memory_used = mem_after - mem_before
     
+    print("Decoding outputs...")
     result = processor.batch_decode(outputs, skip_special_tokens=True)[0]
     
     # Count tokens (approximate)
     tokens_generated = len(result.split())
     
+    print(f"Inference done. Latency: {latency_ms:.2f}ms, Memory: {memory_used:.2f}MB, Tokens: {tokens_generated}")
     return {
         'result': result,
         'latency_ms': latency_ms,
