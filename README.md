@@ -231,158 +231,26 @@ docker run --rm -v $(pwd)/data:/app/data vlm-analyzer \
 ls data/results/
 ```
 
+### API Testing
+
+Once deployed to Kubernetes, you can test the FastAPI endpoints:
+
+#### Health Check
+```bash
+curl http://<DEPLOYMENT_URL>/health
+# Expected: {"status":"ok"}
+```
+
+#### Single Image Inference
+```bash
+curl -X POST "http://<DEPLOYMENT_URL>/infer" \
+     -F "file=@data/images/chart_001.png"
+# Expected: JSON with analysis results, latency, memory usage:
+# {'result': {'result': 'Dummy analysis: This is a test chart with no pattern detected.', 'latency_ms': 0.0, 'memory_mb': 0.0, 'tokens': 10}}
+```
+
 ## GitHub Actions CI/CD
 
-Automated Docker builds and tests on every push (via self-hosted Windows runner):
+Automated Docker builds and pushes to Docker Hub.
 
-```yaml
-# .github/workflows/docker-build.yml
-- Builds Docker image
-- Runs benchmarks in container
-- Pushes to GitHub Container Registry (ghcr.io)
-```
-
-View workflow status and artifacts on GitHub Actions tab.
-
-## Performance Tips
-
-### Model Selection
-
-- **Qwen2-VL-2B** - Recommended for speed-critical applications (~250ms latency)
-- **LLaVA-1.6-8B** - Recommended for quality-critical applications (~900ms latency)
-- **Phi-3-Vision** - Balanced option (~400ms latency)
-
-### Precision Selection
-
-- Use **INT8** for real-time applications (>3x speedup, 25% memory)
-- Use **FP16** for balanced performance (2x speedup, 50% memory)
-- Use **FP32** for highest accuracy (baseline reference)
-
-### Batch Processing
-
-```bash
-# Benchmark multiple configurations
-for model in qwen2-vl-2b llava-1.6-8b phi-3-vision; do
-  for precision in fp32 fp16 int8; do
-    poetry run python scripts/benchmark.py \
-      --model $model --precision $precision --limit 100
-  done
-done
-```
-
-## Development
-
-### Running Tests
-
-```bash
-# Test visualization module with sample data
-poetry run python scripts/test_visualizations.py
-
-# Run pytest suite
-poetry run pytest tests/
-```
-
-### Code Quality
-
-```bash
-# Format code
-poetry run black src/ scripts/ tests/
-
-# Lint
-poetry run ruff check src/ scripts/ tests/
-```
-
-### Adding New Models
-
-1. Update `MODEL_REGISTRY` in `src/vlm_chart_pattern_analyzer/models.py`
-2. Add model-specific prompt in `src/vlm_chart_pattern_analyzer/inference.py`
-3. Test with `poetry run python scripts/test_vlm.py --model <new-model>`
-
-## Troubleshooting
-
-### PyTorch Installation Issues
-
-If you encounter PyTorch DLL errors on Windows:
-
-```bash
-# Reinstall PyTorch via Poetry
-poetry lock --no-cache
-poetry install
-```
-
-### MetaTrader5 Connection
-
-If chart generation fails:
-- Ensure MetaTrader5 terminal is running
-- Check EURUSD (or specified symbol) is available
-- Verify 30+ days of historical data is available
-
-### GPU Support
-
-This project uses CPU by default. For GPU support:
-
-1. Update `torch` in `pyproject.toml` to CUDA-enabled version
-2. Run `poetry lock && poetry install`
-3. GPU inference will be automatic
-
-## License
-
-[Your License Here]
-
-## Citation
-
-If you use this project in research, please cite:
-
-```bibtex
-@software{vlm_chart_pattern_analyzer,
-  title={VLM Chart Pattern Analyzer},
-  author={[Your Name]},
-  year={2025},
-  url={https://github.com/leweex95/vlm-chart-pattern-analyzer}
-}
-```
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Submit pull request
-
-## Support
-
-For issues, questions, or suggestions:
-- Open a GitHub Issue
-- Check existing documentation in `STEP*.md` files
-- Review benchmark results in `data/results/`
-
-## Roadmap
-
-- [ ] Step 9: Pattern similarity metrics (cosine similarity between model outputs)
-- [ ] Step 10: Helm deployment for Kubernetes
-- [ ] Step 11: GitHub Pages dashboard with result history
-- [ ] Step 12: Real-time monitoring with Prometheus metrics
-
-## Changelog
-
-### Version 0.1.0 (2025-10-22)
-
-**Steps Completed:**
-- Step 1: Basic project setup ✓
-- Step 2: Chart generation from MT5 ✓
-- Step 3: VLM inference testing ✓
-- Step 4: Performance metrics collection ✓
-- Step 5: Quantization support (FP32/FP16/INT8) ✓
-- Step 6: Batch benchmarking with CSV export ✓
-- Step 7: Multi-model support (Qwen2/LLaVA/Phi-3) ✓
-- Step 8: Plotly interactive visualizations ✓
-
-**Key Features:**
-- 3 state-of-the-art VLMs supported
-- 3 precision levels (FP32, FP16, INT8)
-- Real market data (MetaTrader5)
-- Interactive performance visualizations
-- Docker containerization
-- GitHub Actions CI/CD
+A separate gitops repository has been set up to monitor manifest or Dockerfile changes in this repo and have Kubernetes redeploy the modified deployments automatically.
